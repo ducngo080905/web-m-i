@@ -158,3 +158,7 @@ OPENAI_API_KEY = env('OPENAI_API_KEY', default='')
 # Session
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 CART_SESSION_ID = 'cart'
+ALLOWED_HOSTS = [
+    ".railway.app",
+    "duckphoneshop.com"
+]
