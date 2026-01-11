@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Tư vấn - Phone Accessories Shop{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex align-items-center">
+                    <i class="bi bi-robot fs-4 me-2"></i>
+                    <div>
+                        <h5 class="mb-0">AI Tư vấn sản phẩm</h5>
+                        <small>Powered by GPT-3.5</small>
+                    </div>
+                </div>
+                
+                <div class="card-body" id="chatMessages" style="height: 450px; overflow-y: auto;">
+                    <!-- Welcome message -->
+                    <div class="d-flex mb-3">
+                        <div class="bg-success text-white rounded p-3" style="max-width: 80%;">
+                            <p class="mb-0">
+                                <i class="bi bi-robot"></i> Xin chào! Tôi là trợ lý AI của Phone Accessories Shop. 
+                                Hãy cho tôi biết bạn đang tìm kiếm phụ kiện gì, tôi sẽ tư vấn cho bạn những sản phẩm phù hợp nhất! 🎧📱
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer">
+                    <form id="aiChatForm" class="d-flex gap-2">
+                        {% csrf_token %}
+                        <input type="text" id="userMessage" class="form-control" 
+                               placeholder="Ví dụ: Tôi cần ốp lưng cho iPhone 15..." autocomplete="off">
+                        <button type="submit" class="btn btn-success" id="sendBtn">
+                            <i class="bi bi-send"></i>
+                        </button>
+                    </form>
+                    <small class="text-muted">Gợi ý: Hỏi về loại phụ kiện, mẫu điện thoại, mức giá...</small>
+                </div>
+            </div>
+            
+            <!-- Quick questions -->
+            <div class="mt-3">
+                <p class="text-muted mb-2">Câu hỏi gợi ý:</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-outline-secondary btn-sm quick-question">Ốp lưng bền đẹp cho iPhone?</button>
+                    <button class="btn btn-outline-secondary btn-sm quick-question">Tai nghe bluetooth giá rẻ?</button>
+                    <button class="btn btn-outline-secondary btn-sm quick-question">Sạc nhanh cho Samsung?</button>
+                    <button class="btn btn-outline-secondary btn-sm quick-question">Phụ kiện gaming mobile?</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const chatMessages = document.getElementById('chatMessages');
+const form = document.getElementById('aiChatForm');
+const input = document.getElementById('userMessage');
+const sendBtn = document.getElementById('sendBtn');
+
+// Handle form submit
+form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    sendMessage(input.value);
+});
+
+// Quick questions
+document.querySelectorAll('.quick-question').forEach(btn => {
+    btn.addEventListener('click', function() {
+        sendMessage(this.textContent);
+    });
+});
+
+async function sendMessage(message) {
+    if (!message.trim()) return;
+    
+    // Add user message
+    appendMessage(message, 'user');
+    input.value = '';
+    
+    // Show typing indicator
+    sendBtn.disabled = true;
+    const typingId = showTyping();
+    
+    try {
+        const response = await fetch('{% url "ai_recommend" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: 'message=' + encodeURIComponent(message)
+        });
+        
+        const data = await response.json();
+        removeTyping(typingId);
+        
+        if (data.status === 'success') {
+            appendMessage(data.reply, 'ai');
+        } else {
+            appendMessage('Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại!', 'ai');
+        }
+    } catch (error) {
+        removeTyping(typingId);
+        appendMessage('Không thể kết nối đến AI. Vui lòng thử lại sau!', 'ai');
+    }
+    
+    sendBtn.disabled = false;
+}
+
+function appendMessage(text, type) {
+    const isUser = type === 'user';
+    const html = `
+        <div class="d-flex mb-3 ${isUser ? 'justify-content-end' : ''}">
+            <div class="${isUser ? 'bg-primary' : 'bg-success'} text-white rounded p-3" style="max-width: 80%;">
+                ${!isUser ? '<i class="bi bi-robot me-1"></i>' : ''}
+                <span>${text}</span>
+            </div>
+        </div>
+    `;
+    chatMessages.insertAdjacentHTML('beforeend', html);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function showTyping() {
+    const id = 'typing-' + Date.now();
+    const html = `
+        <div class="d-flex mb-3" id="${id}">
+            <div class="bg-success text-white rounded p-3">
+                <i class="bi bi-robot me-1"></i>
+                <span class="typing-dots">Đang suy nghĩ<span>.</span><span>.</span><span>.</span></span>
+            </div>
+        </div>
+    `;
+    chatMessages.insertAdjacentHTML('beforeend', html);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return id;
+}
+
+function removeTyping(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+</script>
+
+<style>
+.typing-dots span {
+    animation: blink 1.4s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+</style>
+{% endblock %}

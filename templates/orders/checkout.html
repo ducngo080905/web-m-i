@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}Thanh toán - Phone Accessories Shop{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4"><i class="bi bi-credit-card"></i> Thanh toán đơn hàng</h2>
+    
+    <div class="row">
+        <!-- Checkout Form -->
+        <div class="col-lg-8">
+            <form method="POST" id="checkoutForm">
+                {% csrf_token %}
+                
+                <!-- Shipping Info -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-truck"></i> Thông tin giao hàng</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Họ tên *</label>
+                                {{ form.full_name }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Số điện thoại *</label>
+                                {{ form.phone }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Email *</label>
+                                {{ form.email }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Địa chỉ giao hàng *</label>
+                                {{ form.address }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Ghi chú</label>
+                                {{ form.note }}
+                            </div>
+                        </div>
+                        
+                        <!-- Map for delivery location -->
+                        <div class="mt-4">
+                            <label class="form-label">
+                                <i class="bi bi-geo-alt"></i> Chọn điểm giao hàng trên bản đồ
+                            </label>
+                            <div id="map" style="height: 300px; border-radius: 10px;"></div>
+                            {{ form.latitude }}
+                            {{ form.longitude }}
+                            <small class="text-muted">Click vào bản đồ để chọn vị trí giao hàng chính xác</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payment Method -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-wallet2"></i> Phương thức thanh toán</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for method in form.payment_method.field.queryset %}
+                        <div class="form-check mb-3 p-3 border rounded">
+                            <input class="form-check-input" type="radio" name="payment_method" 
+                                   id="payment_{{ method.id }}" value="{{ method.id }}"
+                                   {% if forloop.first %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="payment_{{ method.id }}">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi {{ method.icon }} fs-4 me-3 text-primary"></i>
+                                    <div>
+                                        <strong>{{ method.name }}</strong>
+                                        <p class="mb-0 text-muted small">{{ method.description }}</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-success btn-lg w-100">
+                    <i class="bi bi-check-circle"></i> Đặt hàng ({{ total|floatformat:0 }}đ)
+                </button>
+            </form>
+        </div>
+        
+        <!-- Order Summary -->
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 100px;">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-bag"></i> Đơn hàng của bạn</h5>
+                </div>
+                <div class="card-body">
+                    {% for item in cart %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <div>
+                            <span>{{ item.product.name|truncatechars:25 }}</span>
+                            <small class="text-muted">x{{ item.quantity }}</small>
+                        </div>
+                        <span>{{ item.total_price|floatformat:0 }}đ</span>
+                    </div>
+                    {% endfor %}
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tạm tính:</span>
+                        <span>{{ cart.get_total_price|floatformat:0 }}đ</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Phí vận chuyển:</span>
+                        <span>{{ shipping_fee|floatformat:0 }}đ</span>
+                    </div>
+                    
+                    {% if discount > 0 %}
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>Giảm giá ({{ coupon.code }}):</span>
+                        <span>-{{ discount|floatformat:0 }}đ</span>
+                    </div>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <strong>Tổng cộng:</strong>
+                        <strong class="text-danger fs-5">{{ total|floatformat:0 }}đ</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leaflet Map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize map
+    const defaultLat = {{ form.latitude.value|default:"10.8231" }};
+    const defaultLng = {{ form.longitude.value|default:"106.6297" }};
+    
+    const map = L.map('map').setView([defaultLat, defaultLng], 13);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+    
+    let marker = L.marker([defaultLat, defaultLng], {draggable: true}).addTo(map);
+    
+    // Update coordinates on marker drag
+    marker.on('dragend', function(e) {
+        const position = marker.getLatLng();
+        document.getElementById('id_latitude').value = position.lat;
+        document.getElementById('id_longitude').value = position.lng;
+    });
+    
+    // Click on map to move marker
+    map.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        document.getElementById('id_latitude').value = e.latlng.lat;
+        document.getElementById('id_longitude').value = e.latlng.lng;
+    });
+});
+</script>
+{% endblock %}

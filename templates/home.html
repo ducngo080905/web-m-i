@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <section class="hero-section py-5 mb-5 rounded-4 text-white text-center" 
+             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="py-5">
+            <h1 class="display-4 fw-bold mb-3">Phụ Kiện Điện Thoại Chính Hãng</h1>
+            <p class="lead mb-4">Chất lượng tốt nhất - Giá cả hợp lý - Giao hàng nhanh chóng</p>
+            <a href="{% url 'product_list' %}" class="btn btn-light btn-lg px-5">
+                <i class="bi bi-bag"></i> Mua sắm ngay
+            </a>
+        </div>
+    </section>
+    
+    <!-- Categories -->
+    <section class="mb-5">
+        <h2 class="h4 mb-4"><i class="bi bi-grid"></i> Danh mục sản phẩm</h2>
+        <div class="row g-3">
+            {% for category in categories %}
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="{% url 'products_by_category' category.slug %}" class="text-decoration-none">
+                    <div class="card h-100 text-center category-card">
+                        <div class="card-body">
+                            <i class="bi bi-box-seam fs-1 text-primary mb-2"></i>
+                            <h6 class="card-title mb-0">{{ category.name }}</h6>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    
+    <!-- Featured Products -->
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h4 mb-0"><i class="bi bi-star"></i> Sản phẩm nổi bật</h2>
+            <a href="{% url 'product_list' %}?featured=1" class="btn btn-outline-primary btn-sm">Xem tất cả</a>
+        </div>
+        <div class="row g-4">
+            {% for product in featured_products %}
+            <div class="col-6 col-md-4 col-lg-3">
+                {% include 'products/partials/product_card.html' with product=product %}
+            </div>
+            {% empty %}
+            <p class="text-muted">Chưa có sản phẩm nổi bật.</p>
+            {% endfor %}
+        </div>
+    </section>
+    
+    <!-- New Products -->
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h4 mb-0"><i class="bi bi-lightning"></i> Sản phẩm mới</h2>
+            <a href="{% url 'product_list' %}" class="btn btn-outline-primary btn-sm">Xem tất cả</a>
+        </div>
+        <div class="row g-4">
+            {% for product in new_products %}
+            <div class="col-6 col-md-4 col-lg-3">
+                {% include 'products/partials/product_card.html' with product=product %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    
+    <!-- Best Sellers -->
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h4 mb-0"><i class="bi bi-fire"></i> Bán chạy nhất</h2>
+        </div>
+        <div class="row g-4">
+            {% for product in best_sellers %}
+            <div class="col-6 col-md-4 col-lg-3">
+                {% include 'products/partials/product_card.html' with product=product %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    
+    <!-- AI Assistant Banner -->
+    <section class="mb-5">
+        <div class="card bg-gradient text-white" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+            <div class="card-body py-5 text-center">
+                <i class="bi bi-robot display-3 mb-3"></i>
+                <h3>Trợ lý AI thông minh</h3>
+                <p class="lead mb-4">Để AI tư vấn sản phẩm phù hợp với nhu cầu của bạn!</p>
+                <a href="{% url 'ai_chat' %}" class="btn btn-light btn-lg">
+                    <i class="bi bi-chat-dots"></i> Bắt đầu chat
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
